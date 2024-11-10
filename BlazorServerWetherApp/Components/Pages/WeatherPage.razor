@@ -1,0 +1,36 @@
+﻿@using System.Text.Json
+@inject IHttpClientFactory HttpClientFactory
+@inject IConfiguration Configuration
+
+
+<h3>WeatherPage</h3>
+
+
+<p>City: @city</p>
+<p>Weather : @weather</p>
+
+@debug
+
+@code {
+    private string city = "London";
+    private string weather = "Unknown";
+
+    // ForDebugging
+    private string debug = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = HttpClientFactory.CreateClient();
+
+        var baseUrl = Configuration["ConnectionStrings:WeatherForecast"];
+        var TokenKey = Configuration["Secret:WeatherKey"];
+        var url = $"{baseUrl}?q={city}&appid={TokenKey}";
+
+        debug = url;
+        // var response = await client.GetAsync($"https://localhost:44370/weatherforecast/{city}");
+        var response = await client.GetAsync(url);
+        var content = await response.Content.ReadAsStringAsync();
+        weather = content;
+    }
+
+}
