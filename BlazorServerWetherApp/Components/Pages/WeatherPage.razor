@@ -1,0 +1,87 @@
+﻿@using System.Text.Json
+@using System.Net.Http
+@using BlazorServerWetherApp.Models
+@inject IHttpClientFactory HttpClientFactory
+@inject IConfiguration Configuration
+
+<h3>WeatherPage</h3>
+
+<h4>Select City</h4>
+<EditForm Model="dummyModel">
+    <InputSelect @oninput="DdlChange" @bind-Value="city">
+        <option value="Tokyo">Tokyo</option>
+        <option value="Osaka">Osaka</option>
+        <option value="Nagoya">Nagoya</option>
+        <option value="Fukuoka">Fukuoka</option>
+        <option value="Sapporo">Sapporo</option>
+    </InputSelect>
+</EditForm>
+
+@if (_weatherForecast is null)
+{
+    <p>都市が未選択です。</p>
+}
+else
+{
+    <table>
+        <tr>
+            <th>City</th>
+            <td>@_weatherForecast.Name</td>
+        </tr>
+        <tr>
+            <th>Weather</th>
+            <td>@_weatherForecast.Weather[0].Main</td>
+        </tr>
+        <tr>
+            <th>Temperature</th>
+            <td>@_weatherForecast.Main.Temp</td>
+        </tr>
+    </table>
+}
+
+@code {
+    private DummyModel dummyModel = new();
+    private string city = string.Empty;
+    private string weather = "Unknown";
+    private WeatherForecast _weatherForecast;
+
+    // ForDebugging
+    private string debug = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    private async Task DdlChange(ChangeEventArgs e)
+    {
+        Console.WriteLine("test");
+
+        city = e.Value?.ToString();
+
+        var client = HttpClientFactory.CreateClient();
+
+        var baseUrl = Configuration["ConnectionStrings:WeatherForecast"];
+        var TokenKey = Configuration["Secret:WeatherKey"];
+        var url = $"{baseUrl}?q={city}&appid={TokenKey}&units=metric";
+
+        debug = url;
+        var response = await client.GetAsync(url);
+        var content = await response.Content.ReadAsStringAsync();
+
+        var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+        var weatherForecast = JsonSerializer.Deserialize<WeatherForecast>(content, options);
+        _weatherForecast = weatherForecast;
+
+        weather = content;
+
+    }
+
+    class DummyModel
+    {
+        
+    }
+
+}
